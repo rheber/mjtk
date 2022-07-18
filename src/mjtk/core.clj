@@ -13,12 +13,27 @@
 (s/def :mjtk/tile (s/or :number :mjtk/number :honor :mjtk/honor))
 
 ; Tilestrings
-(s/def :mjtk/tilestring #(re-seq #"^[0-9mwcpdsbzh]*$" %))
+(s/def :mjtk/tilestring
+  #(re-seq
+     #"^(([0-9]+[mwcpdsb])|([1-7]+[zh]))*$"
+     %))
+
+(defn tiles<-tilestring [tilestring]
+  "Convert a tilestring to a list of tiles."
+  (def clumps (map first
+                   (re-seq  #"([0-9]+[mwcpdsb])|([1-7]+[zh])" tilestring)))
+  (def paired
+    (apply concat
+           (map (fn [clump]
+                  (map #(list (last clump) %)
+                       (butlast clump))) clumps)))
+  paired
+  )
 
 (defn -main
   "Main function."
   [& args]
   (if args 
-    (println 
-      (s/valid? :mjtk/tilestring 
-               (first args)))))
+    (if (s/valid? :mjtk/tilestring (first args))
+        (println (tiles<-tilestring (first args)))
+        )))
