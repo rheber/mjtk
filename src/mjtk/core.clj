@@ -1,6 +1,11 @@
 (ns mjtk.core
-  (:require [clojure.spec.alpha :as s])
-  (:gen-class))
+  (:require
+    [clojure.pprint :as pp]
+    [clojure.string :as str]
+    [clojure.spec.alpha :as s]
+  )
+  (:gen-class)
+)
 
 ; Tiles
 (s/def :mjtk/rank (s/and int? #(>= % 1) #(<= % 9)))
@@ -30,13 +35,44 @@
   paired
 )
 
+(defn tile<-tilePair [tilePair]
+  "Convert a value of the form (p 0) into a value that meets the :mjtk/tile spec."
+  (let [rank (second tilePair) suit (str (first tilePair))]
+    (cond
+      (str/includes? "zh" suit) (cond
+        (= \1 rank) :east
+        (= \2 rank) :south
+        (= \3 rank) :west
+        (= \4 rank) :north
+        (= \5 rank) :red
+        (= \6 rank) :white
+        (= \7 rank) :green
+        :else (throw (RuntimeException. (str "Invalid rank: " rank)))
+      )
+      (str/includes? "mwc" suit) (if (= \0 rank)
+        {:mjtk/rank 5 :mjtk/suit :crc :mjtk/reddora true}
+        {:mjtk/rank (Character/digit rank 10) :mjtk/suit :crc}
+      )
+      (str/includes? "pd" suit) (if (= \0 rank)
+        {:mjtk/rank 5 :mjtk/suit :dot :mjtk/reddora true}
+        {:mjtk/rank (Character/digit rank 10) :mjtk/suit :dot}
+      )
+      (str/includes? "sb" suit) (if (= \0 rank)
+        {:mjtk/rank 5 :mjtk/suit :bam :mjtk/reddora true}
+        {:mjtk/rank (Character/digit rank 10) :mjtk/suit :bam}
+      )
+      :else (throw (RuntimeException. (str "Invalid suit: " suit)))
+    )
+  )
+)
+
 (defn -main
   "Main function."
   [& args]
   (if args 
     (let [tilestring (first args)]
       (if (s/valid? :mjtk/tilestring tilestring)
-          (println (tilePairs<-tilestring tilestring))
+          (pp/pprint (map tile<-tilePair (tilePairs<-tilestring tilestring)))
           (println "Invalid tilestring.")
       )
     )
